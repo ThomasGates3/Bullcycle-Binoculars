@@ -6,6 +6,18 @@
     <title>Bullcycle Binoculars - Track the Market in Real Time</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
     <style>
+        :root {
+            --primary-bg: #000000;
+            --secondary-bg: #111111;
+            --card-bg: #0a0a0a;
+            --accent-green: #00FF00;
+            --accent-bright: #0FFF00;
+            --accent-negative: #FF0055;
+            --text-primary: #FFFFFF;
+            --text-secondary: #CCCCCC;
+            --border-color: #1a1a1a;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -14,493 +26,806 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: #1a1a1a;
-            color: #ffffff;
+            background: var(--primary-bg);
+            color: var(--text-primary);
             min-height: 100vh;
             line-height: 1.6;
+            overflow-x: hidden;
+            cursor: none;
         }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 40px;
+        /* Cursor Glow Effect */
+        #cursor-glow {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0, 255, 0, 0.4) 0%, rgba(0, 255, 0, 0.1) 70%, transparent 100%);
+            pointer-events: none;
+            z-index: 9999;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.5), inset 0 0 20px rgba(0, 255, 0, 0.3);
+            transform: translate(-50%, -50%);
+            filter: drop-shadow(0 0 10px rgba(0, 255, 0, 0.4));
         }
 
         /* Navigation */
         .nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 30px 0;
-            border-bottom: 1px solid #2a2a2a;
+            padding: 20px 40px;
+            background: var(--primary-bg);
+            border-bottom: 1px solid var(--border-color);
+            backdrop-filter: blur(10px);
+            background-color: rgba(0, 0, 0, 0.9);
         }
 
         .nav-brand {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: #ffffff;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--accent-green);
+            letter-spacing: 1px;
+            font-family: 'Courier New', monospace;
         }
 
         .nav-links {
             display: flex;
-            gap: 40px;
+            gap: 50px;
             list-style: none;
         }
 
         .nav-links a {
-            color: #cccccc;
+            color: var(--text-secondary);
             text-decoration: none;
             font-weight: 500;
-            transition: color 0.2s;
+            font-size: 0.9rem;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            position: relative;
         }
 
         .nav-links a:hover {
-            color: #1ed760; /* A nice green accent color */
+            color: var(--accent-green);
+            text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
         }
-        
-        /* Main Content Styling */
+
+        /* Header Section */
         .header-section {
-            padding: 50px 0;
+            padding: 60px 40px;
             text-align: center;
         }
 
         .header-section h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            letter-spacing: 1px;
+            color: var(--text-primary);
         }
 
         .header-section p {
-            font-size: 1.1rem;
-            color: #cccccc;
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            letter-spacing: 0.5px;
         }
-        
-        /* Crypto Grid */
-        #crypto-grid {
+
+        .container {
+            max-width: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Main Content - Two Column Layout */
+        .main-content {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 30px;
-            padding-bottom: 50px;
+            grid-template-columns: 1fr 2fr;
+            gap: 40px;
+            padding: 40px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        /* Left Column - Prices */
+        .prices-column {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .add-crypto-btn {
+            background: transparent;
+            border: 2px solid var(--accent-green);
+            color: var(--accent-green);
+            padding: 12px 20px;
+            border-radius: 2px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            font-family: 'Courier New', monospace;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .add-crypto-btn:hover {
+            background: var(--accent-green);
+            color: #000;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.6);
+        }
+
+        .remove-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: transparent;
+            border: none;
+            color: var(--accent-negative);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            z-index: 10;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .remove-btn:hover {
+            color: #FF0099;
+            text-shadow: 0 0 10px rgba(255, 0, 85, 0.6);
         }
 
         .card {
-            background: #242424;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+        }
+
+        #crypto-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-left: 3px solid var(--accent-green);
+            padding: 24px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 2px;
+            position: relative;
+            overflow: hidden;
         }
-        
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(0, 255, 0, 0.05) 0%, transparent 100%);
+            pointer-events: none;
+        }
+
         .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+            transform: translateY(-3px);
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
         }
 
         .card-header {
             display: flex;
             align-items: center;
             margin-bottom: 15px;
+            gap: 12px;
         }
 
         .card-header img {
-            width: 32px;
-            height: 32px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
-            margin-right: 15px;
             object-fit: cover;
         }
 
+        .card-info {
+            display: flex;
+            flex-direction: column;
+        }
+
         .crypto-name {
-            font-size: 1.3rem;
+            font-size: 1rem;
             font-weight: 600;
+            color: var(--text-primary);
         }
 
         .crypto-symbol {
-            font-size: 1rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
             font-weight: 400;
-            color: #aaaaaa;
         }
 
         .price {
-            font-size: 2rem;
+            font-size: 1.8rem;
             font-weight: 700;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             letter-spacing: -0.05em;
+            font-family: 'Courier New', monospace;
+            color: var(--accent-green);
         }
-        
+
         .change {
-            font-size: 1.1rem;
+            font-size: 0.95rem;
             font-weight: 500;
             display: flex;
             align-items: center;
+            font-family: 'Courier New', monospace;
         }
 
         .positive {
-            color: #1ed760; /* Green */
+            color: var(--accent-green);
         }
 
         .negative {
-            color: #ff4d4f; /* Red */
+            color: var(--accent-negative);
         }
-        
+
         .change .icon {
-            margin-right: 5px;
-            font-size: 1.2rem;
+            margin-right: 6px;
+            font-size: 1rem;
         }
 
-        /* News Section */
-        #news-section {
-            padding: 50px 0;
-            border-top: 1px solid #2a2a2a;
+        /* Right Column - News Grid */
+        .news-column {
+            display: flex;
+            flex-direction: column;
         }
 
-        #news-section h2 {
-            font-size: 2rem;
-            margin-bottom: 30px;
-            text-align: center;
+        .news-column-header {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--accent-green);
+            margin-bottom: 25px;
+            letter-spacing: 1px;
+            font-family: 'Courier New', monospace;
         }
 
         #news-list {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 25px;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
         }
 
         .news-item {
-            background: #242424;
+            background: var(--card-bg);
             padding: 20px;
-            border-radius: 8px;
+            border-top: 2px solid var(--accent-green);
             display: block;
             text-decoration: none;
             color: inherit;
-            transition: background 0.2s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 2px;
+            position: relative;
+            overflow: hidden;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .news-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(0, 255, 0, 0.05) 0%, transparent 100%);
+            pointer-events: none;
         }
 
         .news-item:hover {
-            background: #333333;
+            box-shadow: 0 0 25px rgba(0, 255, 0, 0.4);
+            transform: translateY(-4px);
         }
 
         .news-item h3 {
-            font-size: 1.1rem;
-            margin-bottom: 10px;
-            color: #ffffff;
+            font-size: 0.95rem;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+            font-weight: 600;
+            line-height: 1.4;
         }
 
         .news-item p {
-            font-size: 0.9rem;
-            color: #aaaaaa;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
             margin-bottom: 15px;
+            flex-grow: 1;
+            line-height: 1.5;
         }
 
         .news-item .source {
-            font-size: 0.8rem;
-            color: #1ed760;
-            font-weight: 500;
-        }
-
-        /* Dominance Chart Section */
-        #dominance-section {
-            border-top: 1px solid #2a2a2a;
-            padding-bottom: 50px;
-        }
-        
-        .chart-container {
-            max-width: 600px; /* Constrain size for a better-looking pie chart */
-            height: 400px;
-            margin: 30px auto 0;
-            background: #242424;
-            padding: 20px;
-            border-radius: 12px;
+            font-size: 0.75rem;
+            color: var(--accent-green);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
 
-        /* Utility/State */
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            padding: 30px;
+            border: 2px solid var(--accent-green);
+            border-radius: 2px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.3);
+        }
+
+        .modal-header {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--accent-green);
+            margin-bottom: 20px;
+            letter-spacing: 1px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: transparent;
+            border: none;
+            color: var(--accent-negative);
+            font-size: 2rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .modal-close:hover {
+            text-shadow: 0 0 10px rgba(255, 0, 85, 0.6);
+        }
+
+        .crypto-input {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary-bg);
+            border: 1px solid var(--accent-green);
+            color: var(--text-primary);
+            border-radius: 2px;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 15px;
+            transition: all 0.2s ease;
+        }
+
+        .crypto-input:focus {
+            outline: none;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.4);
+            border-color: var(--accent-bright);
+        }
+
+        .crypto-input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .crypto-suggestions {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 2px;
+        }
+
+        .crypto-suggestion-item {
+            padding: 10px;
+            color: var(--text-primary);
+            cursor: pointer;
+            border-bottom: 1px solid var(--border-color);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .crypto-suggestion-item:hover {
+            background: rgba(0, 255, 0, 0.1);
+            color: var(--accent-green);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .modal-buttons button {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid var(--accent-green);
+            background: transparent;
+            color: var(--accent-green);
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            border-radius: 2px;
+            transition: all 0.2s ease;
+            font-family: 'Courier New', monospace;
+        }
+
+        .modal-buttons button:hover {
+            background: var(--accent-green);
+            color: #000;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Loading and Error States */
         #loading, #error {
             text-align: center;
-            padding: 50px;
-            font-size: 1.2rem;
+            padding: 80px 40px;
+            font-size: 1.1rem;
+            color: var(--text-secondary);
         }
-        
+
+        #loading {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        #news-loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 30px;
+                padding: 30px;
+            }
+
+            #news-list {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            }
+
+            .nav {
+                padding: 15px 30px;
+            }
+
+            .nav-links {
+                gap: 30px;
+            }
+
+            .header-section {
+                padding: 40px 30px;
+            }
+
+            .dominance-section {
+                padding: 40px 30px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .nav {
+                padding: 12px 20px;
+            }
+
+            .nav-brand {
+                font-size: 1.1rem;
+            }
+
+            .nav-links {
+                gap: 20px;
+                font-size: 0.85rem;
+            }
+
+            .main-content {
+                gap: 20px;
+                padding: 20px;
+            }
+
+            .header-section {
+                padding: 30px 20px;
+            }
+
+            .header-section h1 {
+                font-size: 1.8rem;
+            }
+
+            .price {
+                font-size: 1.5rem;
+            }
+
+            #news-list {
+                grid-template-columns: 1fr;
+            }
+
+            .chart-container {
+                padding: 20px;
+                height: 300px;
+            }
+
+            .dominance-section {
+                padding: 30px 20px;
+            }
+        }
+
+        /* Loading Dots Animation */
+        .loading-dots {
+            display: inline-block;
+        }
+
+        .loading-dots::after {
+            content: '...';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60% { content: '...'; }
+        }
     </style>
 </head>
 <body>
+    <!-- Cursor Glow Effect -->
+    <div id="cursor-glow"></div>
+
+    <!-- Add Crypto Modal -->
+    <div id="add-crypto-modal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeAddCryptoModal()">&times;</button>
+            <div class="modal-header">➕ ADD CRYPTOCURRENCY</div>
+            <input
+                type="text"
+                id="crypto-search-input"
+                class="crypto-input"
+                placeholder="Search: Bitcoin, Ethereum, Solana..."
+                oninput="searchCryptos(this.value)">
+            <div id="crypto-suggestions" class="crypto-suggestions"></div>
+            <div class="modal-buttons">
+                <button onclick="closeAddCryptoModal()">CANCEL</button>
+            </div>
+        </div>
+    </div>
+
+    <nav class="nav">
+        <div class="nav-brand">➤ BULLCYCLE ◄</div>
+        <ul class="nav-links">
+            <li><a href="#market">MARKET</a></li>
+            <li><a href="#settings">⚙</a></li>
+        </ul>
+    </nav>
+
     <div class="container">
-        <nav class="nav">
-            <div class="nav-brand">Bullcycle Binoculars 🔭</div>
-            <ul class="nav-links">
-                <li><a href="#market-summary">Market</a></li>
-                <li><a href="#news-section">News</a></li>
-                <li><a href="#dominance-section">Dominance</a></li>
-            </ul>
-        </nav>
-
-        <section id="market-summary" class="header-section">
-            <h1>Real-Time Crypto Market Summary</h1>
-            <p>Prices update every 15 seconds. Data provided by CoinGecko.</p>
+        <section id="market" class="header-section">
+            <h1>⚡ REAL-TIME MARKET TRACKER ⚡</h1>
+            <p>Live crypto prices • Updates every 15 seconds • Powered by CoinGecko</p>
         </section>
 
-        <div id="loading">Loading cryptocurrency prices...</div>
+        <div id="loading">INITIALIZING SYSTEM<span class="loading-dots"></span></div>
         <div id="error" style="display: none;"></div>
-        
-        <div id="crypto-grid" style="display: none;">
+
+        <div class="main-content" id="main-content" style="display: none;">
+            <!-- Left Column: Prices -->
+            <div class="prices-column">
+                <button class="add-crypto-btn" onclick="openAddCryptoModal()">+ ADD CRYPTO</button>
+                <div id="crypto-grid"></div>
             </div>
 
-        <section id="news-section">
-            <h2>Top Crypto News Headlines</h2>
-            <div id="news-list">
-                </div>
-            <div id="news-loading" style="text-align: center; padding: 20px;">Loading news...</div>
-        </section>
-
-        <section id="dominance-section" class="header-section">
-            <h2>Market Cap Dominance of Tracked Coins</h2>
-            <div class="chart-container">
-                <canvas id="dominanceChart"></canvas>
+            <!-- Right Column: News -->
+            <div class="news-column">
+                <div class="news-column-header">╔═══════════════════╗<br/>  MARKET HEADLINES<br/>╚═══════════════════╝</div>
+                <div id="news-list"></div>
+                <div id="news-loading">LOADING NEWS<span class="loading-dots"></span></div>
             </div>
-        </section>
-
+        </div>
     </div>
 
     <script>
         // --- Configuration ---
-        const COINS_TO_TRACK = ['bitcoin', 'ethereum', 'solana', 'hyperliquid']; 
         const REFRESH_INTERVAL = 15000; // 15 seconds
-        
+
         // --- State Variables ---
         let refreshTimer = null;
-        let dominanceChartInstance = null; // Chart.js instance for destruction/update
-        
+        let COINS_TO_TRACK = JSON.parse(localStorage.getItem('coinsToTrack')) || ['bitcoin', 'ethereum', 'solana', 'hyperliquid'];
+        let allCryptos = [];
+
         // --- DOM Elements ---
         const gridEl = document.getElementById('crypto-grid');
         const loadingEl = document.getElementById('loading');
         const errorEl = document.getElementById('error');
+        const mainContentEl = document.getElementById('main-content');
         const newsListEl = document.getElementById('news-list');
         const newsLoadingEl = document.getElementById('news-loading');
-        
+        const modal = document.getElementById('add-crypto-modal');
+        const suggestionsEl = document.getElementById('crypto-suggestions');
+
         // --- Utility Functions ---
 
-        // Function to create an aesthetically pleasing fallback for logos
         function handleImageError(imageEl, symbol) {
-            imageEl.onerror = null; // Prevent infinite loop if fallback also fails
-            imageEl.src = ''; // Clear the broken image
-            imageEl.alt = `${symbol} Logo (Fallback)`;
-            
-            // Create a styled div placeholder
+            imageEl.onerror = null;
+            imageEl.src = '';
+            imageEl.alt = `${symbol} Logo`;
+
             const fallbackDiv = document.createElement('div');
             fallbackDiv.style.cssText = `
-                width: 32px;
-                height: 32px;
+                width: 40px;
+                height: 40px;
                 border-radius: 50%;
-                background-color: #3e3e3e;
-                color: #fff;
-                font-size: 14px;
+                background: linear-gradient(135deg, #00FF00, #0FFF00);
+                color: #000;
+                font-size: 12px;
                 font-weight: 700;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                margin-right: 15px;
                 text-transform: uppercase;
             `;
-            fallbackDiv.textContent = symbol.slice(0, 2); // Use first two letters of symbol
-            
-            // Replace the image element with the fallback div
+            fallbackDiv.textContent = symbol.slice(0, 2);
             imageEl.parentNode.replaceChild(fallbackDiv, imageEl);
         }
 
-        // Function to format price change
         function formatPriceChange(change24h) {
             const isPositive = change24h >= 0;
             const changeClass = isPositive ? 'positive' : 'negative';
             const icon = isPositive ? '↑' : '↓';
-            
-            return `<span class="change ${changeClass}"><span class="icon">${icon}</span>${change24h}% (24h)</span>`;
+            return `<span class="change ${changeClass}"><span class="icon">${icon}</span>${change24h}%</span>`;
         }
 
-        // Function to create an HTML card for a cryptocurrency
         function createCryptoCard(info) {
             const name = info.name;
             const symbol = info.symbol.toUpperCase();
+            const cryptoId = info.id;
             const usdPrice = info.current_price.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 });
             const change24h = info.price_change_percentage_24h.toFixed(2);
             const imageUrl = info.image;
 
             return `
-                <div class="card">
+                <div class="card" data-crypto-id="${cryptoId}">
+                    <button class="remove-btn" onclick="removeCrypto('${cryptoId}')">✕</button>
                     <div class="card-header">
-                        <img src="${imageUrl}" 
+                        <img src="${imageUrl}"
                              onerror="handleImageError(this, '${symbol}')"
                              alt="${name} Logo">
-                        <div class="crypto-name">${name} <span class="crypto-symbol">(${symbol})</span></div>
+                        <div class="card-info">
+                            <div class="crypto-name">${name}</div>
+                            <div class="crypto-symbol">${symbol}</div>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <div class="price">${usdPrice}</div>
-                        ${formatPriceChange(parseFloat(change24h))}
-                    </div>
+                    <div class="price">${usdPrice}</div>
+                    ${formatPriceChange(parseFloat(change24h))}
                 </div>
             `;
         }
 
-        // Function to create an HTML news item
         function createNewsItem(title, snippet, source, url) {
-            const truncatedSnippet = snippet.length > 100 ? snippet.substring(0, 100) + '...' : snippet;
+            const truncatedSnippet = snippet.length > 120 ? snippet.substring(0, 120) + '...' : snippet;
             return `
-                <a class="news-item" href="${url}" target="_blank">
+                <a class="news-item" href="${url}" target="_blank" rel="noopener">
                     <h3>${title}</h3>
                     <p>${truncatedSnippet}</p>
-                    <div class="source">Source: ${source}</div>
+                    <div class="source">► ${source.toUpperCase()}</div>
                 </a>
             `;
         }
-        
-        // --- Chart Rendering Function ---
-        
-        function renderDominanceChart(data) {
-            // Destroy previous instance to prevent chart overlap/memory leak
-            if (dominanceChartInstance) {
-                dominanceChartInstance.destroy();
-            }
-            
-            // 1. Calculate Total Market Cap and create labels/data
-            const totalMarketCap = data.reduce((sum, coin) => sum + coin.market_cap, 0);
-            const labels = data.map(coin => coin.name);
-            // Calculate percentage of total market cap for ONLY the tracked coins
-            const percentages = data.map(coin => ((coin.market_cap / totalMarketCap) * 100).toFixed(2));
 
-            // 2. Define Colors (Chart.js default palette)
-            const backgroundColors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'];
-            const usedColors = labels.map((_, i) => backgroundColors[i % backgroundColors.length]);
-
-            const ctx = document.getElementById('dominanceChart').getContext('2d');
-            
-            dominanceChartInstance = new Chart(ctx, {
-                type: 'pie',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: percentages,
-                        backgroundColor: usedColors,
-                        hoverOffset: 10
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'right',
-                            labels: {
-                                color: '#cccccc', // For dark theme readability
-                                font: {
-                                    size: 14
-                                },
-                                // Custom label text to include percentage for clarity
-                                generateLabels: (chart) => {
-                                    const data = chart.data.datasets[0].data;
-                                    return chart.data.labels.map((label, i) => ({
-                                        text: `${label}: ${data[i]}%`,
-                                        fillStyle: chart.data.datasets[0].backgroundColor[i],
-                                        strokeStyle: '#242424',
-                                        lineWidth: 2,
-                                        index: i
-                                    }));
-                                }
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    let label = context.label || '';
-                                    if (label) {
-                                        label += ': ';
-                                    }
-                                    if (context.parsed !== null) {
-                                        label += context.parsed.toFixed(2) + '%';
-                                    }
-                                    return label;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
 
         // --- Data Fetching ---
 
-        // Fetch price data from CoinGecko
         async function fetchPrices() {
             try {
+                if (COINS_TO_TRACK.length === 0) {
+                    gridEl.innerHTML = '<p style="text-align: center; color: #CCCCCC;">No cryptocurrencies tracked. Add one with the + ADD CRYPTO button.</p>';
+                    loadingEl.style.display = 'none';
+                    errorEl.style.display = 'none';
+                    mainContentEl.style.display = 'grid';
+                    return;
+                }
+
                 const coinIds = COINS_TO_TRACK.join(',');
                 const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${coinIds}&sparkline=false`;
-                
+
                 const response = await fetch(url);
 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                
+
                 const infoData = await response.json();
-                
-                // 1. Render Crypto Cards
+
                 gridEl.innerHTML = '';
                 infoData.forEach(info => {
                     gridEl.innerHTML += createCryptoCard(info);
                 });
-                
-                // 2. Render Dominance Chart
-                renderDominanceChart(infoData);
-                
-                // Update UI state
+
                 loadingEl.style.display = 'none';
                 errorEl.style.display = 'none';
-                gridEl.style.display = 'grid';
-                
+                mainContentEl.style.display = 'grid';
+
             } catch (error) {
                 console.error('Error fetching prices:', error);
-                
+
                 if (refreshTimer) {
                     clearInterval(refreshTimer);
                 }
 
                 loadingEl.style.display = 'none';
-                gridEl.style.display = 'none';
+                mainContentEl.style.display = 'none';
                 errorEl.style.display = 'block';
-                errorEl.innerHTML = `<p>Error fetching market data: ${error.message}. Please check console for details.</p>`;
+                errorEl.innerHTML = `<p>⚠ SYSTEM ERROR: ${error.message}</p>`;
             }
         }
 
-        // Fetch mock news data
         function fetchNews() {
-            // Mock data simulating news headlines
             const newsData = [
                 {
-                    title: "Bitcoin's Q4 Momentum: Analysts Predict $100K by Year-End",
-                    snippet: "Strong institutional inflow and ETF approval speculation drive bullish sentiment for BTC in the final quarter.",
-                    source: "Crypto Daily",
-                    url: "#"
+                    title: "US Finally Gets Serious About Digital Assets",
+                    snippet: "Government regulatory framework advances accelerate institutional adoption opportunities in the crypto market.",
+                    source: "Crypto News",
+                    url: "https://crypto.news/us-finally-gets-serious-about-digital-assets-opinion/"
                 },
                 {
-                    title: "Ethereum Upgrade: 'Hyper-Deflationary' Era Begins",
-                    snippet: "The latest network hardfork has dramatically reduced the net ETH issuance rate, putting upward pressure on price.",
-                    source: "The Chain Report",
-                    url: "#"
+                    title: "From Bitcoin to AI: 5 Crypto Miners Leaping Into HPC",
+                    snippet: "Major mining operations pivot toward high-performance computing, diversifying revenue streams beyond traditional blockchain.",
+                    source: "Crypto News",
+                    url: "https://crypto.news/from-bitcoin-to-ai-5-crypto-miners-leaping-into-hpc/"
                 },
                 {
-                    title: "Solana DeFi Volume Hits All-Time High",
-                    snippet: "A surge in new user adoption and innovative protocols pushed Solana's Decentralized Finance total volume past $50 billion.",
-                    source: "Block Insights",
-                    url: "#"
+                    title: "Crypto Prices Falling: Why Uptober Is Not Going As Expected",
+                    snippet: "Market analysis reveals seasonal patterns breaking down with expert predictions recalibrated for Q4 performance.",
+                    source: "Crypto News",
+                    url: "https://crypto.news/crypto-prices-falling-why-uptober-is-not-going-as-expected/"
                 },
                 {
-                    title: "Hyperliquid Announces New Perpetual Futures Pairs",
-                    snippet: "The decentralized perpetual exchange (DEX) is expanding its market offerings, targeting a broader institutional audience.",
-                    source: "DEX News Hub",
-                    url: "#"
+                    title: "The U.S. Government Now Holds 327,000 Bitcoin",
+                    snippet: "Government's accumulated Bitcoin holdings exceed institutional investor portfolios, creating significant market dynamics.",
+                    source: "Crypto News",
+                    url: "https://crypto.news/the-u-s-government-now-holds-327000-bitcoin/"
                 }
             ];
-            
+
             newsListEl.innerHTML = '';
             newsData.forEach(item => {
                 newsListEl.innerHTML += createNewsItem(item.title, item.snippet, item.source, item.url);
@@ -508,11 +833,79 @@
             newsLoadingEl.style.display = 'none';
         }
 
-
-        // Make functions available globally
         window.handleImageError = handleImageError;
 
-        // Start auto-refresh
+        // --- Cursor Glow Effect ---
+        const cursorGlow = document.getElementById('cursor-glow');
+        document.addEventListener('mousemove', (e) => {
+            cursorGlow.style.left = e.clientX + 'px';
+            cursorGlow.style.top = e.clientY + 'px';
+        });
+
+        document.addEventListener('mouseleave', () => {
+            cursorGlow.style.display = 'none';
+        });
+
+        document.addEventListener('mouseenter', () => {
+            cursorGlow.style.display = 'block';
+        });
+
+        // --- Modal Functions ---
+        function openAddCryptoModal() {
+            modal.classList.add('active');
+            document.getElementById('crypto-search-input').focus();
+        }
+
+        function closeAddCryptoModal() {
+            modal.classList.remove('active');
+            suggestionsEl.innerHTML = '';
+            document.getElementById('crypto-search-input').value = '';
+        }
+
+        async function fetchAllCryptos() {
+            try {
+                const url = 'https://api.coingecko.com/api/v3/coins/list';
+                const response = await fetch(url);
+                allCryptos = await response.json();
+            } catch (error) {
+                console.error('Error fetching crypto list:', error);
+            }
+        }
+
+        function searchCryptos(query) {
+            if (query.length < 1) {
+                suggestionsEl.innerHTML = '';
+                return;
+            }
+
+            const filtered = allCryptos.filter(crypto =>
+                crypto.name.toLowerCase().includes(query.toLowerCase()) ||
+                crypto.symbol.toLowerCase().includes(query.toLowerCase())
+            ).slice(0, 10);
+
+            suggestionsEl.innerHTML = filtered.map(crypto => `
+                <div class="crypto-suggestion-item" onclick="addCrypto('${crypto.id}')">
+                    <span>${crypto.name}</span>
+                    <span style="color: var(--text-secondary); font-size: 0.85rem;">${crypto.symbol.toUpperCase()}</span>
+                </div>
+            `).join('');
+        }
+
+        function addCrypto(cryptoId) {
+            if (!COINS_TO_TRACK.includes(cryptoId)) {
+                COINS_TO_TRACK.push(cryptoId);
+                localStorage.setItem('coinsToTrack', JSON.stringify(COINS_TO_TRACK));
+                fetchPrices();
+            }
+            closeAddCryptoModal();
+        }
+
+        function removeCrypto(cryptoId) {
+            COINS_TO_TRACK = COINS_TO_TRACK.filter(id => id !== cryptoId);
+            localStorage.setItem('coinsToTrack', JSON.stringify(COINS_TO_TRACK));
+            fetchPrices();
+        }
+
         function startAutoRefresh() {
             if (refreshTimer) {
                 clearInterval(refreshTimer);
@@ -520,27 +913,29 @@
             refreshTimer = setInterval(fetchPrices, REFRESH_INTERVAL);
         }
 
-        // Initialize the app
         function init() {
+            fetchAllCryptos();
             fetchPrices();
-            fetchNews(); // Fetch news once
+            fetchNews();
             startAutoRefresh();
         }
 
-        // Start the app when DOM is loaded
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', init);
         } else {
             init();
         }
 
-        // Clean up on page unload
         window.addEventListener('beforeunload', () => {
             if (refreshTimer) {
                 clearInterval(refreshTimer);
             }
-            if (dominanceChartInstance) {
-                dominanceChartInstance.destroy();
+        });
+
+        // Close modal when clicking outside
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeAddCryptoModal();
             }
         });
     </script>
