@@ -52,6 +52,7 @@ resource "aws_iam_role_policy" "lambda_policy" {
 }
 
 resource "aws_lambda_function" "crypto_news" {
+  count               = fileexists("${path.module}/lambda_package/lambda_crypto_news.zip") ? 1 : 0
   filename            = "${path.module}/lambda_package/lambda_crypto_news.zip"
   function_name       = var.lambda_function_name
   role                = aws_iam_role.lambda_role.arn
@@ -70,7 +71,7 @@ resource "aws_lambda_function" "crypto_news" {
     }
   }
 
-  source_code_hash = filebase64sha256("${path.module}/lambda_package/lambda_crypto_news.zip")
+  source_code_hash = try(filebase64sha256("${path.module}/lambda_package/lambda_crypto_news.zip"), "placeholder")
 }
 
 resource "aws_api_gateway_rest_api" "crypto_news_api" {
@@ -96,28 +97,33 @@ resource "aws_api_gateway_method" "news_get" {
 }
 
 resource "aws_api_gateway_integration" "lambda_integration" {
+  count               = fileexists("${path.module}/lambda_package/lambda_crypto_news.zip") ? 1 : 0
   rest_api_id      = aws_api_gateway_rest_api.crypto_news_api.id
   resource_id      = aws_api_gateway_resource.news_resource.id
   http_method      = aws_api_gateway_method.news_get.http_method
   type             = "AWS_PROXY"
   integration_http_method = "POST"
-  uri              = aws_lambda_function.crypto_news.invoke_arn
+  uri              = aws_lambda_function.crypto_news[0].invoke_arn
 }
 
 resource "aws_lambda_permission" "api_gateway" {
+  count             = fileexists("${path.module}/lambda_package/lambda_crypto_news.zip") ? 1 : 0
   statement_id  = "AllowAPIGatewayInvoke"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.crypto_news.function_name
+  function_name = aws_lambda_function.crypto_news[0].function_name
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_api_gateway_rest_api.crypto_news_api.execution_arn}/*/*"
 }
 
 resource "aws_api_gateway_deployment" "api_deployment" {
-  depends_on  = [aws_api_gateway_integration.lambda_integration]
   rest_api_id = aws_api_gateway_rest_api.crypto_news_api.id
 
   lifecycle {
     create_before_destroy = true
+  }
+
+  triggers = {
+    lambda_updated = fileexists("${path.module}/lambda_package/lambda_crypto_news.zip") ? aws_lambda_function.crypto_news[0].source_code_hash : ""
   }
 }
 

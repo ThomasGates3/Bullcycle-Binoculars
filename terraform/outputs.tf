@@ -40,7 +40,7 @@ output "deployment_info" {
 
 output "lambda_function_name" {
   description = "Crypto news Lambda function name"
-  value       = aws_lambda_function.crypto_news.function_name
+  value       = length(aws_lambda_function.crypto_news) > 0 ? aws_lambda_function.crypto_news[0].function_name : null
 }
 
 output "api_gateway_url" {
