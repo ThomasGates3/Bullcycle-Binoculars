@@ -45,7 +45,7 @@ output "lambda_function_name" {
 
 output "api_gateway_url" {
   description = "API Gateway endpoint URL"
-  value       = "${aws_api_gateway_deployment.api_deployment.invoke_url}/news"
+  value       = "${aws_api_gateway_stage.api_stage.invoke_url}/news"
 }
 
 output "dynamodb_table_name" {

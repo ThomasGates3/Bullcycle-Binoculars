@@ -122,7 +122,21 @@ resource "aws_lambda_permission" "api_gateway" {
 resource "aws_api_gateway_deployment" "api_deployment" {
   depends_on  = [aws_api_gateway_integration.lambda_integration]
   rest_api_id = aws_api_gateway_rest_api.crypto_news_api.id
-  stage_name  = var.api_stage_name
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_api_gateway_stage" "api_stage" {
+  deployment_id = aws_api_gateway_deployment.api_deployment.id
+  rest_api_id   = aws_api_gateway_rest_api.crypto_news_api.id
+  stage_name    = var.api_stage_name
+}
+
+resource "aws_cloudwatch_log_group" "api_gateway_logs" {
+  name              = "/aws/apigateway/crypto-news-api"
+  retention_in_days = 7
 }
 
 resource "aws_api_gateway_method_response" "response_200" {
