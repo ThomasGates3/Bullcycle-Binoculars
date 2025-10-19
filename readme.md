@@ -120,55 +120,91 @@ CoinGecko API → Data Processing → DOM Rendering → Browser Display
      └────────────────── Auto-refresh (15s) ────────────┘
 ```
 
-## 📦 Deployment to AWS S3
+## 📦 Deployment Options
 
-### Prerequisites
-- AWS Account with S3 and CloudFront access
-- AWS CLI configured (optional, can use AWS Console)
+### Option A: Automated Deployment (Recommended)
 
-### Steps
+**Infrastructure + CI/CD Setup:**
 
-1. **Create S3 Bucket**
-   - Go to AWS S3 Console
-   - Create bucket: `bullcycle-binoculars-{your-username}`
-   - Enable static website hosting in bucket properties
-   - Set index document to `index.html`
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for complete step-by-step guide including:
+- Setting up AWS credentials
+- Deploying infrastructure with Terraform
+- Configuring GitHub Actions CI/CD
+- Automated S3 + CloudFront deployment
 
-2. **Upload Files**
-   ```bash
-   cd src
-   aws s3 sync . s3://bullcycle-binoculars-{your-username}/ --acl public-read
-   ```
+**Quick summary:**
+1. Deploy infrastructure with Terraform (one-time)
+2. Configure GitHub Secrets with AWS credentials
+3. Push to main → automatic deployment to S3 + CloudFront
+4. Get live URL instantly
 
-3. **Configure CloudFront**
-   - Create CloudFront distribution
-   - Set S3 bucket as origin
-   - Enable HTTPS and HTTP/2
-   - Set default root object to `index.html`
+### Option B: Manual S3 Upload
 
-4. **Update Bucket Policy**
-   ```json
-   {
-       "Version": "2012-10-17",
-       "Statement": [{
-           "Effect": "Allow",
-           "Principal": "*",
-           "Action": "s3:GetObject",
-           "Resource": "arn:aws:s3:::bullcycle-binoculars-{your-username}/*"
-       }]
-   }
-   ```
+```bash
+# Prerequisites: AWS account + AWS CLI configured
+
+# 1. Create S3 bucket (replace with your name)
+aws s3 mb s3://bullcycle-binoculars-yourname
+
+# 2. Enable static website hosting
+aws s3 website s3://bullcycle-binoculars-yourname \
+  --index-document index.html \
+  --error-document index.html
+
+# 3. Set bucket policy for public access
+aws s3api put-bucket-policy --bucket bullcycle-binoculars-yourname \
+  --policy file://bucket-policy.json
+
+# 4. Upload files
+aws s3 sync src/ s3://bullcycle-binoculars-yourname/ --delete
+
+# 5. Access site
+# http://bullcycle-binoculars-yourname.s3-website-us-east-1.amazonaws.com
+```
+
+---
+
+## ✨ What's Included
+
+### Terraform Infrastructure (Option B Recommended)
+- **S3 Bucket** with static website hosting enabled
+- **CloudFront Distribution** for global CDN delivery
+- **Bucket Policies** for secure public access
+- **CORS Configuration** for proper file serving
+- **CloudFront Origin Access Identity** for S3 security
+
+### GitHub Actions CI/CD
+- **Automatic Deployments**: Push to main → deployed to S3
+- **Cache Invalidation**: CloudFront cache automatically cleared
+- **Multi-Step Workflow**: Plan, sync, invalidate, verify
+- **Detailed Logging**: See deployment status in GitHub Actions
+
+---
+
+## 🚀 Deploy in 5 Steps
+
+1. **Set up AWS credentials** → See DEPLOYMENT.md
+2. **Run Terraform** → Creates S3 + CloudFront infrastructure
+3. **Add GitHub Secrets** → AWS credentials for CI/CD
+4. **Push to main** → Automatic deployment starts
+5. **View live URL** → Site goes live globally via CloudFront
+
+**⏱️ Total time: ~15 minutes (5-10 for CloudFront to propagate)**
+
+---
 
 ## 📋 Deployment Checklist
 
-- [ ] Create S3 bucket with static website hosting enabled
-- [ ] Upload `src/index.html` to S3 root
-- [ ] Create CloudFront distribution pointing to S3
-- [ ] Wait for CloudFront distribution to deploy (5-10 minutes)
-- [ ] Test CloudFront URL in browser
-- [ ] Verify real-time price updates working
-- [ ] Check mobile responsiveness
-- [ ] Confirm chart rendering correctly
+- [ ] AWS account created
+- [ ] Terraform deployed infrastructure
+- [ ] GitHub Secrets configured (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+- [ ] First push to main triggers deployment
+- [ ] S3 bucket contains files
+- [ ] CloudFront distribution active
+- [ ] Live URL accessible globally
+- [ ] Real-time price updates working
+- [ ] Mobile responsiveness verified
+- [ ] Share CloudFront URL with portfolio!
 
 ## 🧪 Testing
 

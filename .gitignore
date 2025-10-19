@@ -39,3 +39,13 @@ ehthumbs.db
 # Logs
 logs/
 *.log
+
+# Terraform
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
+terraform/*.tfplan
+*.tfstate*
+*.tfvars
+!terraform/terraform.tfvars

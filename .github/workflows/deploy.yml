@@ -1,0 +1,88 @@
+name: Deploy to S3 + CloudFront
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - '.github/workflows/deploy.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Get S3 bucket name from Terraform output
+        id: tf_output
+        run: |
+          cd terraform
+          # Initialize Terraform if needed
+          terraform init -backend=false > /dev/null 2>&1 || true
+
+          # Extract bucket name and CloudFront ID from state or output
+          BUCKET_NAME=$(aws s3 ls | grep bullcycle-binoculars | awk '{print $3}' | head -1)
+
+          if [ -z "$BUCKET_NAME" ]; then
+            echo "Error: S3 bucket not found. Run 'terraform apply' first."
+            exit 1
+          fi
+
+          echo "bucket_name=${BUCKET_NAME}" >> $GITHUB_OUTPUT
+          echo "Detected bucket: ${BUCKET_NAME}"
+
+      - name: Sync files to S3
+        env:
+          BUCKET_NAME: ${{ steps.tf_output.outputs.bucket_name }}
+        run: |
+          echo "📤 Syncing files to S3 bucket: $BUCKET_NAME"
+          aws s3 sync src/ s3://${BUCKET_NAME}/ \
+            --delete \
+            --cache-control "public, max-age=3600" \
+            --exclude ".git*" \
+            --exclude "*.md"
+          echo "✅ Files synced successfully"
+
+      - name: Invalidate CloudFront cache
+        run: |
+          echo "🔄 Invalidating CloudFront cache..."
+
+          # Get CloudFront distribution ID from S3 bucket tags or find by origin
+          DISTRIBUTION_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[?Origins[0].DomainName==\`${BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com\`].Id" --output text)
+
+          if [ -z "$DISTRIBUTION_ID" ]; then
+            echo "⚠️  CloudFront distribution not found. Skipping cache invalidation."
+            echo "   (This is OK if you haven't created the CloudFront distribution yet)"
+          else
+            aws cloudfront create-invalidation --distribution-id ${DISTRIBUTION_ID} --paths "/*"
+            echo "✅ CloudFront cache invalidated for distribution: ${DISTRIBUTION_ID}"
+          fi
+
+      - name: Get deployment URLs
+        env:
+          BUCKET_NAME: ${{ steps.tf_output.outputs.bucket_name }}
+        run: |
+          echo ""
+          echo "=========================================="
+          echo "✅ Deployment Complete!"
+          echo "=========================================="
+          echo ""
+          echo "📍 S3 Website URL:"
+          echo "   http://${BUCKET_NAME}.s3-website-us-east-1.amazonaws.com"
+          echo ""
+          echo "🌍 CloudFront URL (if configured):"
+          echo "   Check GitHub Actions output above"
+          echo ""
+          echo "📦 Deployed files:"
+          aws s3 ls s3://${BUCKET_NAME}/ --recursive | wc -l | xargs echo "   Total files:"
+          echo ""
