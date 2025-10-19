@@ -6,11 +6,12 @@ A real-time cryptocurrency tracker that keeps you up to date in Web3. Monitor Bi
 
 - **Real-Time Price Tracking**: Live cryptocurrency prices updating every 15 seconds via CoinGecko API
 - **Market Dominance Chart**: Interactive pie chart showing market cap distribution of tracked coins
-- **Crypto News**: Latest cryptocurrency news headlines integrated from premium sources
+- **AI-Powered Crypto News**: Latest news with sentiment analysis (🐂 Bullish, 🐻 Bearish, ⚪ Neutral)
+- **News Sentiment Filtering**: Filter articles by bullish/bearish/neutral sentiment
 - **Responsive Design**: Optimized for desktop, tablet, and mobile devices
 - **Dark Theme UI**: Modern dark interface with smooth animations and hover effects
 - **Error Handling**: Graceful fallbacks and user-friendly error messages
-- **No Dependencies**: Pure vanilla JavaScript, HTML5, and CSS3—lightweight and fast
+- **Serverless Backend**: AWS Lambda microservice with DynamoDB caching
 
 ## 🚀 Quick Start
 
@@ -31,42 +32,68 @@ That's it! No build process, no dependencies, no setup required.
 
 ### Live Demo
 
-View the live deployment: https://d3e84acf01c0iv.cloudfront.net/
+**🌐 Website**: http://bullcycle-binoculars-049475639513.s3-website-us-east-1.amazonaws.com/
+
+**✅ Features Working**:
+- Real-time crypto prices (Bitcoin, Ethereum, Solana, Hyperliquid)
+- Add/remove cryptocurrencies
+- Market dominance chart
+- Live crypto news with AI sentiment analysis
+- Sentiment emoji indicators (🐂 Bullish | 🐻 Bearish | ⚪ Neutral)
+- Filter news by sentiment
 
 ## 📊 Technical Architecture
 
 ```
-┌──────────────────────────┐
-│   Browser Application    │
-│  (HTML/CSS/JavaScript)   │
-└──────────────┬───────────┘
-               │
-        ┌──────▼──────┐
-        │ CoinGecko   │
-        │ Public API  │
-        └─────────────┘
-               │
-┌──────────────▼──────────────┐
-│   Static Web Hosting        │
-│   (AWS S3 + CloudFront)     │
-└─────────────────────────────┘
+┌─────────────────────────────────────────┐
+│      Browser Application                │
+│  (HTML/CSS/Vanilla JavaScript)          │
+└─────────┬──────────────────────┬────────┘
+          │                      │
+    ┌─────▼──────┐        ┌──────▼──────────────┐
+    │ CoinGecko  │        │ Lambda Microservice │
+    │ Public API │        │ (Crypto News API)   │
+    └────────────┘        └──────┬─────────────┘
+          │                      │
+          │              ┌───────▼────────┐
+          │              │ DynamoDB Cache │
+          │              │ (15-min TTL)   │
+          │              └────────────────┘
+          │                      │
+          └──────────┬───────────┘
+                     │
+       ┌─────────────▼──────────────┐
+       │ AWS S3 + CloudFront        │
+       │ Static Website Hosting     │
+       └────────────────────────────┘
 ```
 
 ### AWS Services
 
-- **Amazon S3**: Static website hosting
+- **Amazon S3**: Static website hosting + source files
 - **Amazon CloudFront**: CDN for global distribution and HTTPS
-- **AWS Certificate Manager**: Free SSL/TLS certificates
+- **AWS Lambda**: Serverless microservice for crypto news
+- **Amazon DynamoDB**: News cache with 15-minute TTL
+- **AWS API Gateway**: REST endpoint for Lambda integration
+- **AWS Bedrock**: Claude 3 Haiku for sentiment analysis
+- **AWS IAM**: Least-privilege security roles
+- **Amazon CloudWatch**: Logging and monitoring
 
 ## 🛠️ Technology Stack
 
 | Category | Technology |
 |----------|-----------|
-| Frontend | HTML5, CSS3, Vanilla JavaScript |
-| Charting | Chart.js |
-| Data Source | CoinGecko API (free, no auth required) |
-| Hosting | AWS S3 + CloudFront |
-| Deployment | GitHub Actions (automated) |
+| **Frontend** | HTML5, CSS3, Vanilla JavaScript |
+| **Charting** | Chart.js |
+| **Price Data** | CoinGecko API (free, no auth required) |
+| **News API** | NewsData.io API |
+| **Sentiment Analysis** | AWS Bedrock (Claude 3 Haiku) |
+| **Backend** | Node.js 18.x Lambda (TypeScript) |
+| **Caching** | DynamoDB with 15-minute TTL |
+| **REST API** | AWS API Gateway |
+| **Hosting** | AWS S3 + CloudFront |
+| **Infrastructure** | Terraform |
+| **Deployment** | AWS CLI / Terraform |
 
 ## 📈 Tracked Cryptocurrencies
 
@@ -113,12 +140,26 @@ This project demonstrates:
 3. Market dominance is calculated and chart updates automatically
 4. Error states are handled gracefully
 
-### Data Flow
-```javascript
-CoinGecko API → Data Processing → DOM Rendering → Browser Display
-     ↑                                                    │
-     └────────────────── Auto-refresh (15s) ────────────┘
+### News with AI Sentiment Analysis
+1. Frontend requests news from Lambda API endpoint
+2. Lambda fetches 10 crypto news articles from NewsData.io
+3. Bedrock analyzes sentiment of each article (🐂 Bullish, 🐻 Bearish, ⚪ Neutral)
+4. Results cached in DynamoDB for 15 minutes (reduces costs 15x)
+5. Frontend displays articles with emoji indicators
+6. Users filter by sentiment with buttons
+
+### Architecture
 ```
+Browser → API Gateway → Lambda → NewsData.io API
+                          ↓
+                      Bedrock AI (Sentiment)
+                          ↓
+                      DynamoDB Cache
+                          ↓
+                      Response to Browser
+```
+
+**Cost**: $5-15/month (covered by free tier or minimal charge)
 
 ## 📦 Deployment Options
 
