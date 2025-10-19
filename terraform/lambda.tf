@@ -51,8 +51,6 @@ resource "aws_iam_role_policy" "lambda_policy" {
   })
 }
 
-data "aws_caller_identity" "current" {}
-
 resource "aws_lambda_function" "crypto_news" {
   filename            = "lambda_placeholder.zip"
   function_name       = var.lambda_function_name
