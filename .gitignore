@@ -47,5 +47,14 @@ terraform/terraform.tfstate
 terraform/terraform.tfstate.backup
 terraform/*.tfplan
 *.tfstate*
-*.tfvars
-!terraform/terraform.tfvars
+terraform/terraform.tfvars
+!terraform/terraform.tfvars.example
+
+# Lambda build artifacts
+src/lambda/*/dist/
+src/lambda/*/node_modules/
+src/lambda/*/.env
+src/lambda/*/*.zip
+
+# API endpoint
+API_ENDPOINT.txt
