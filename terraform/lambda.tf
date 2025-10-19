@@ -52,10 +52,10 @@ resource "aws_iam_role_policy" "lambda_policy" {
 }
 
 resource "aws_lambda_function" "crypto_news" {
-  filename            = data.archive_file.lambda_zip.output_path
+  filename            = "${path.module}/lambda_package/lambda_crypto_news.zip"
   function_name       = var.lambda_function_name
   role                = aws_iam_role.lambda_role.arn
-  handler             = "dist/handler.handler"
+  handler             = "handler.handler"
   runtime             = "nodejs18.x"
   timeout             = 30
   memory_size         = 512
@@ -70,14 +70,7 @@ resource "aws_lambda_function" "crypto_news" {
     }
   }
 
-  source_code_hash = data.archive_file.lambda_zip.output_base64sha256
-  depends_on       = [data.archive_file.lambda_zip]
-}
-
-data "archive_file" "lambda_zip" {
-  type        = "zip"
-  source_dir  = "${path.module}/../src/lambda/crypto-news/dist"
-  output_path = "${path.module}/lambda_crypto_news.zip"
+  source_code_hash = fileexists("${path.module}/lambda_package/lambda_crypto_news.zip") ? filebase64sha256("${path.module}/lambda_package/lambda_crypto_news.zip") : null
 }
 
 resource "aws_api_gateway_rest_api" "crypto_news_api" {

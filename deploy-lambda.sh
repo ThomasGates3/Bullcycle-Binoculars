@@ -27,7 +27,23 @@ if [ ! -d "dist" ]; then
   exit 1
 fi
 
-echo -e "${GREEN}✅ Lambda build complete${NC}"
+echo "Creating deployment package..."
+# Create deployment directory
+mkdir -p ../../terraform/lambda_package
+cd ../../terraform/lambda_package
+rm -rf * .* 2>/dev/null || true
+
+# Copy compiled code
+cp -r ../../../src/lambda/crypto-news/dist/* .
+
+# Copy node_modules but exclude dev dependencies
+mkdir -p node_modules
+cp -r ../../../src/lambda/crypto-news/node_modules/* node_modules/ 2>/dev/null || true
+
+# Create ZIP file
+zip -r lambda_crypto_news.zip . -x "node_modules/*/test/*" "node_modules/*/.git/*" > /dev/null
+
+echo -e "${GREEN}✅ Lambda build and package complete${NC}"
 cd ../../../
 
 # Step 2: Check Terraform configuration
