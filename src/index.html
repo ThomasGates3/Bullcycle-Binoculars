@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bullcycle Binoculars - Track the Market in Real Time</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #1a1a1a;
+            color: #ffffff;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 40px;
+        }
+
+        /* Navigation */
+        .nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 30px 0;
+            border-bottom: 1px solid #2a2a2a;
+        }
+
+        .nav-brand {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 40px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: #cccccc;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: #1ed760; /* A nice green accent color */
+        }
+        
+        /* Main Content Styling */
+        .header-section {
+            padding: 50px 0;
+            text-align: center;
+        }
+
+        .header-section h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header-section p {
+            font-size: 1.1rem;
+            color: #cccccc;
+        }
+        
+        /* Crypto Grid */
+        #crypto-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            padding-bottom: 50px;
+        }
+
+        .card {
+            background: #242424;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .card-header img {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            margin-right: 15px;
+            object-fit: cover;
+        }
+
+        .crypto-name {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .crypto-symbol {
+            font-size: 1rem;
+            font-weight: 400;
+            color: #aaaaaa;
+        }
+
+        .price {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            letter-spacing: -0.05em;
+        }
+        
+        .change {
+            font-size: 1.1rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+        }
+
+        .positive {
+            color: #1ed760; /* Green */
+        }
+
+        .negative {
+            color: #ff4d4f; /* Red */
+        }
+        
+        .change .icon {
+            margin-right: 5px;
+            font-size: 1.2rem;
+        }
+
+        /* News Section */
+        #news-section {
+            padding: 50px 0;
+            border-top: 1px solid #2a2a2a;
+        }
+
+        #news-section h2 {
+            font-size: 2rem;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        #news-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .news-item {
+            background: #242424;
+            padding: 20px;
+            border-radius: 8px;
+            display: block;
+            text-decoration: none;
+            color: inherit;
+            transition: background 0.2s;
+        }
+
+        .news-item:hover {
+            background: #333333;
+        }
+
+        .news-item h3 {
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            color: #ffffff;
+        }
+
+        .news-item p {
+            font-size: 0.9rem;
+            color: #aaaaaa;
+            margin-bottom: 15px;
+        }
+
+        .news-item .source {
+            font-size: 0.8rem;
+            color: #1ed760;
+            font-weight: 500;
+        }
+
+        /* Dominance Chart Section */
+        #dominance-section {
+            border-top: 1px solid #2a2a2a;
+            padding-bottom: 50px;
+        }
+        
+        .chart-container {
+            max-width: 600px; /* Constrain size for a better-looking pie chart */
+            height: 400px;
+            margin: 30px auto 0;
+            background: #242424;
+            padding: 20px;
+            border-radius: 12px;
+        }
+
+
+        /* Utility/State */
+        #loading, #error {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.2rem;
+        }
+        
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="nav">
+            <div class="nav-brand">Bullcycle Binoculars 🔭</div>
+            <ul class="nav-links">
+                <li><a href="#market-summary">Market</a></li>
+                <li><a href="#news-section">News</a></li>
+                <li><a href="#dominance-section">Dominance</a></li>
+            </ul>
+        </nav>
+
+        <section id="market-summary" class="header-section">
+            <h1>Real-Time Crypto Market Summary</h1>
+            <p>Prices update every 15 seconds. Data provided by CoinGecko.</p>
+        </section>
+
+        <div id="loading">Loading cryptocurrency prices...</div>
+        <div id="error" style="display: none;"></div>
+        
+        <div id="crypto-grid" style="display: none;">
+            </div>
+
+        <section id="news-section">
+            <h2>Top Crypto News Headlines</h2>
+            <div id="news-list">
+                </div>
+            <div id="news-loading" style="text-align: center; padding: 20px;">Loading news...</div>
+        </section>
+
+        <section id="dominance-section" class="header-section">
+            <h2>Market Cap Dominance of Tracked Coins</h2>
+            <div class="chart-container">
+                <canvas id="dominanceChart"></canvas>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        // --- Configuration ---
+        const COINS_TO_TRACK = ['bitcoin', 'ethereum', 'solana', 'hyperliquid']; 
+        const REFRESH_INTERVAL = 15000; // 15 seconds
+        
+        // --- State Variables ---
+        let refreshTimer = null;
+        let dominanceChartInstance = null; // Chart.js instance for destruction/update
+        
+        // --- DOM Elements ---
+        const gridEl = document.getElementById('crypto-grid');
+        const loadingEl = document.getElementById('loading');
+        const errorEl = document.getElementById('error');
+        const newsListEl = document.getElementById('news-list');
+        const newsLoadingEl = document.getElementById('news-loading');
+        
+        // --- Utility Functions ---
+
+        // Function to create an aesthetically pleasing fallback for logos
+        function handleImageError(imageEl, symbol) {
+            imageEl.onerror = null; // Prevent infinite loop if fallback also fails
+            imageEl.src = ''; // Clear the broken image
+            imageEl.alt = `${symbol} Logo (Fallback)`;
+            
+            // Create a styled div placeholder
+            const fallbackDiv = document.createElement('div');
+            fallbackDiv.style.cssText = `
+                width: 32px;
+                height: 32px;
+                border-radius: 50%;
+                background-color: #3e3e3e;
+                color: #fff;
+                font-size: 14px;
+                font-weight: 700;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-right: 15px;
+                text-transform: uppercase;
+            `;
+            fallbackDiv.textContent = symbol.slice(0, 2); // Use first two letters of symbol
+            
+            // Replace the image element with the fallback div
+            imageEl.parentNode.replaceChild(fallbackDiv, imageEl);
+        }
+
+        // Function to format price change
+        function formatPriceChange(change24h) {
+            const isPositive = change24h >= 0;
+            const changeClass = isPositive ? 'positive' : 'negative';
+            const icon = isPositive ? '↑' : '↓';
+            
+            return `<span class="change ${changeClass}"><span class="icon">${icon}</span>${change24h}% (24h)</span>`;
+        }
+
+        // Function to create an HTML card for a cryptocurrency
+        function createCryptoCard(info) {
+            const name = info.name;
+            const symbol = info.symbol.toUpperCase();
+            const usdPrice = info.current_price.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const change24h = info.price_change_percentage_24h.toFixed(2);
+            const imageUrl = info.image;
+
+            return `
+                <div class="card">
+                    <div class="card-header">
+                        <img src="${imageUrl}" 
+                             onerror="handleImageError(this, '${symbol}')"
+                             alt="${name} Logo">
+                        <div class="crypto-name">${name} <span class="crypto-symbol">(${symbol})</span></div>
+                    </div>
+                    <div class="card-body">
+                        <div class="price">${usdPrice}</div>
+                        ${formatPriceChange(parseFloat(change24h))}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Function to create an HTML news item
+        function createNewsItem(title, snippet, source, url) {
+            const truncatedSnippet = snippet.length > 100 ? snippet.substring(0, 100) + '...' : snippet;
+            return `
+                <a class="news-item" href="${url}" target="_blank">
+                    <h3>${title}</h3>
+                    <p>${truncatedSnippet}</p>
+                    <div class="source">Source: ${source}</div>
+                </a>
+            `;
+        }
+        
+        // --- Chart Rendering Function ---
+        
+        function renderDominanceChart(data) {
+            // Destroy previous instance to prevent chart overlap/memory leak
+            if (dominanceChartInstance) {
+                dominanceChartInstance.destroy();
+            }
+            
+            // 1. Calculate Total Market Cap and create labels/data
+            const totalMarketCap = data.reduce((sum, coin) => sum + coin.market_cap, 0);
+            const labels = data.map(coin => coin.name);
+            // Calculate percentage of total market cap for ONLY the tracked coins
+            const percentages = data.map(coin => ((coin.market_cap / totalMarketCap) * 100).toFixed(2));
+
+            // 2. Define Colors (Chart.js default palette)
+            const backgroundColors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'];
+            const usedColors = labels.map((_, i) => backgroundColors[i % backgroundColors.length]);
+
+            const ctx = document.getElementById('dominanceChart').getContext('2d');
+            
+            dominanceChartInstance = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: percentages,
+                        backgroundColor: usedColors,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                color: '#cccccc', // For dark theme readability
+                                font: {
+                                    size: 14
+                                },
+                                // Custom label text to include percentage for clarity
+                                generateLabels: (chart) => {
+                                    const data = chart.data.datasets[0].data;
+                                    return chart.data.labels.map((label, i) => ({
+                                        text: `${label}: ${data[i]}%`,
+                                        fillStyle: chart.data.datasets[0].backgroundColor[i],
+                                        strokeStyle: '#242424',
+                                        lineWidth: 2,
+                                        index: i
+                                    }));
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += context.parsed.toFixed(2) + '%';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // --- Data Fetching ---
+
+        // Fetch price data from CoinGecko
+        async function fetchPrices() {
+            try {
+                const coinIds = COINS_TO_TRACK.join(',');
+                const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${coinIds}&sparkline=false`;
+                
+                const response = await fetch(url);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const infoData = await response.json();
+                
+                // 1. Render Crypto Cards
+                gridEl.innerHTML = '';
+                infoData.forEach(info => {
+                    gridEl.innerHTML += createCryptoCard(info);
+                });
+                
+                // 2. Render Dominance Chart
+                renderDominanceChart(infoData);
+                
+                // Update UI state
+                loadingEl.style.display = 'none';
+                errorEl.style.display = 'none';
+                gridEl.style.display = 'grid';
+                
+            } catch (error) {
+                console.error('Error fetching prices:', error);
+                
+                if (refreshTimer) {
+                    clearInterval(refreshTimer);
+                }
+
+                loadingEl.style.display = 'none';
+                gridEl.style.display = 'none';
+                errorEl.style.display = 'block';
+                errorEl.innerHTML = `<p>Error fetching market data: ${error.message}. Please check console for details.</p>`;
+            }
+        }
+
+        // Fetch mock news data
+        function fetchNews() {
+            // Mock data simulating news headlines
+            const newsData = [
+                {
+                    title: "Bitcoin's Q4 Momentum: Analysts Predict $100K by Year-End",
+                    snippet: "Strong institutional inflow and ETF approval speculation drive bullish sentiment for BTC in the final quarter.",
+                    source: "Crypto Daily",
+                    url: "#"
+                },
+                {
+                    title: "Ethereum Upgrade: 'Hyper-Deflationary' Era Begins",
+                    snippet: "The latest network hardfork has dramatically reduced the net ETH issuance rate, putting upward pressure on price.",
+                    source: "The Chain Report",
+                    url: "#"
+                },
+                {
+                    title: "Solana DeFi Volume Hits All-Time High",
+                    snippet: "A surge in new user adoption and innovative protocols pushed Solana's Decentralized Finance total volume past $50 billion.",
+                    source: "Block Insights",
+                    url: "#"
+                },
+                {
+                    title: "Hyperliquid Announces New Perpetual Futures Pairs",
+                    snippet: "The decentralized perpetual exchange (DEX) is expanding its market offerings, targeting a broader institutional audience.",
+                    source: "DEX News Hub",
+                    url: "#"
+                }
+            ];
+            
+            newsListEl.innerHTML = '';
+            newsData.forEach(item => {
+                newsListEl.innerHTML += createNewsItem(item.title, item.snippet, item.source, item.url);
+            });
+            newsLoadingEl.style.display = 'none';
+        }
+
+
+        // Make functions available globally
+        window.handleImageError = handleImageError;
+
+        // Start auto-refresh
+        function startAutoRefresh() {
+            if (refreshTimer) {
+                clearInterval(refreshTimer);
+            }
+            refreshTimer = setInterval(fetchPrices, REFRESH_INTERVAL);
+        }
+
+        // Initialize the app
+        function init() {
+            fetchPrices();
+            fetchNews(); // Fetch news once
+            startAutoRefresh();
+        }
+
+        // Start the app when DOM is loaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+
+        // Clean up on page unload
+        window.addEventListener('beforeunload', () => {
+            if (refreshTimer) {
+                clearInterval(refreshTimer);
+            }
+            if (dominanceChartInstance) {
+                dominanceChartInstance.destroy();
+            }
+        });
+    </script>
+</body>
+</html>

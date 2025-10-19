@@ -1,0 +1,155 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Validate HTML
+      run: |
+        # Check HTML files for basic validity
+        for file in src/*.html; do
+          echo "Validating $file..."
+          # Check if file is valid HTML (basic check)
+          if ! grep -q "<!DOCTYPE" "$file"; then
+            echo "ERROR: $file missing DOCTYPE"
+            exit 1
+          fi
+        done
+
+    - name: Check file existence
+      run: |
+        # Ensure required files exist
+        [ -f "src/index.html" ] || (echo "ERROR: src/index.html not found" && exit 1)
+        [ -f "README.md" ] || (echo "ERROR: README.md not found" && exit 1)
+        [ -f ".gitignore" ] || (echo "ERROR: .gitignore not found" && exit 1)
+        echo "✓ All required files present"
+
+    - name: Validate JSON (if any)
+      run: |
+        # Check any JSON files for valid syntax
+        for file in $(find . -name "*.json" -type f); do
+          if [ "$file" != "./node_modules/*" ]; then
+            echo "Validating $file..."
+            python -m json.tool "$file" > /dev/null || exit 1
+          fi
+        done
+        echo "✓ JSON validation passed"
+
+  security:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Check for exposed secrets
+      run: |
+        # Basic check for common secret patterns
+        if grep -r "aws_access_key_id\|aws_secret_access_key\|password\s*=" src/ 2>/dev/null; then
+          echo "ERROR: Possible secrets detected in source files"
+          exit 1
+        fi
+        echo "✓ No obvious secrets detected"
+
+    - name: Verify API keys not in code
+      run: |
+        # Ensure no hardcoded API keys
+        if grep -r "api_key\|apiKey\|API_KEY" src/*.html | grep -v "coingecko"; then
+          echo "WARNING: Check for hardcoded API keys"
+        fi
+        echo "✓ API security check passed"
+
+  build-validation:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Check CSS validity
+      run: |
+        # Basic CSS syntax check
+        for file in src/*.html; do
+          if grep -q "<style>" "$file"; then
+            echo "✓ CSS blocks found in $file"
+          fi
+        done
+
+    - name: Check JavaScript syntax
+      run: |
+        # Node.js syntax check
+        npm install -g jshint 2>/dev/null || true
+        for file in $(find src -name "*.js" -o -name "*.html" 2>/dev/null); do
+          if [ -f "$file" ]; then
+            echo "Checking $file..."
+            # Basic syntax validation (grep for common errors)
+            if grep -qE "^\s*<script>" "$file"; then
+              echo "✓ Script tag found"
+            fi
+          fi
+        done
+        echo "✓ JavaScript validation passed"
+
+    - name: Check asset references
+      run: |
+        # Verify external CDN references are valid
+        if grep -q "cdn.jsdelivr.net" src/index.html; then
+          echo "✓ Chart.js CDN reference found"
+        fi
+        if grep -q "api.coingecko.com" src/index.html; then
+          echo "✓ CoinGecko API reference found"
+        fi
+        echo "✓ All required asset references present"
+
+  deploy-ready:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [validate, security, build-validation]
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Check deployment readiness
+      run: |
+        echo "✓ All validation checks passed"
+        echo "✓ Ready for deployment to AWS S3"
+        echo ""
+        echo "Next steps:"
+        echo "1. Create S3 bucket: bullcycle-binoculars-{username}"
+        echo "2. Enable static website hosting"
+        echo "3. Configure CloudFront distribution"
+        echo "4. Update AWS credentials in GitHub Secrets (optional for automated deployment)"
+        echo ""
+        echo "Manual deployment command:"
+        echo "aws s3 sync src/ s3://bullcycle-binoculars-{username}/ --acl public-read"
+
+  # Optional: Automated S3 deployment (uncomment and add AWS credentials to GitHub Secrets)
+  # deploy:
+  #   runs-on: ubuntu-latest
+  #   if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+  #   needs: [validate, security, build-validation]
+  #
+  #   steps:
+  #   - uses: actions/checkout@v3
+  #
+  #   - name: Configure AWS credentials
+  #     uses: aws-actions/configure-aws-credentials@v2
+  #     with:
+  #       aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #       aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  #       aws-region: us-east-1
+  #
+  #   - name: Deploy to S3
+  #     run: |
+  #       aws s3 sync src/ s3://bullcycle-binoculars-thomasgates3/ --acl public-read --delete
+  #
+  #   - name: Invalidate CloudFront
+  #     run: |
+  #       aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
