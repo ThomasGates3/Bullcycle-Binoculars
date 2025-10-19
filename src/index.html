@@ -358,6 +358,32 @@
             letter-spacing: 0.5px;
         }
 
+        /* Sentiment Filter Buttons */
+        .sentiment-btn {
+            padding: 0.5rem 1rem;
+            background: transparent;
+            border: 1px solid var(--accent-green);
+            color: var(--text-secondary);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .sentiment-btn:hover {
+            border-color: var(--accent-bright);
+            color: var(--accent-green);
+        }
+
+        .sentiment-btn.active {
+            background: var(--accent-green);
+            color: #000;
+            border-color: var(--accent-green);
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+        }
 
         /* Modal Styles */
         .modal {
@@ -657,6 +683,12 @@
             <!-- Right Column: News -->
             <div class="news-column">
                 <div class="news-column-header">╔═══════════════════╗<br/>  MARKET HEADLINES<br/>╚═══════════════════╝</div>
+                <div id="sentiment-filter" style="display: flex; gap: 0.5rem; margin-bottom: 20px; flex-wrap: wrap;">
+                    <button class="sentiment-btn active" data-sentiment="all" onclick="filterNewsBySentiment('all')">All News</button>
+                    <button class="sentiment-btn" data-sentiment="positive" onclick="filterNewsBySentiment('positive')">🐂 Bullish</button>
+                    <button class="sentiment-btn" data-sentiment="negative" onclick="filterNewsBySentiment('negative')">🐻 Bearish</button>
+                    <button class="sentiment-btn" data-sentiment="neutral" onclick="filterNewsBySentiment('neutral')">⚪ Neutral</button>
+                </div>
                 <div id="news-list"></div>
                 <div id="news-loading">LOADING NEWS<span class="loading-dots"></span></div>
             </div>
@@ -740,13 +772,16 @@
             `;
         }
 
-        function createNewsItem(title, snippet, source, url) {
-            const truncatedSnippet = snippet.length > 120 ? snippet.substring(0, 120) + '...' : snippet;
+        function createNewsItem(article) {
+            const truncatedSnippet = article.snippet.length > 120 ? article.snippet.substring(0, 120) + '...' : article.snippet;
             return `
-                <a class="news-item" href="${url}" target="_blank" rel="noopener">
-                    <h3>${title}</h3>
+                <a class="news-item" href="${article.url}" target="_blank" rel="noopener">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                        <span style="font-size: 1.5rem;">${article.emoji}</span>
+                        <h3 style="margin: 0; flex: 1;">${article.title}</h3>
+                    </div>
                     <p>${truncatedSnippet}</p>
-                    <div class="source">► ${source.toUpperCase()}</div>
+                    <div class="source">► ${article.source.toUpperCase()}</div>
                 </a>
             `;
         }
@@ -798,42 +833,87 @@
             }
         }
 
-        function fetchNews() {
-            const newsData = [
-                {
-                    title: "US Finally Gets Serious About Digital Assets",
-                    snippet: "Government regulatory framework advances accelerate institutional adoption opportunities in the crypto market.",
-                    source: "Crypto News",
-                    url: "https://crypto.news/us-finally-gets-serious-about-digital-assets-opinion/"
-                },
-                {
-                    title: "From Bitcoin to AI: 5 Crypto Miners Leaping Into HPC",
-                    snippet: "Major mining operations pivot toward high-performance computing, diversifying revenue streams beyond traditional blockchain.",
-                    source: "Crypto News",
-                    url: "https://crypto.news/from-bitcoin-to-ai-5-crypto-miners-leaping-into-hpc/"
-                },
-                {
-                    title: "Crypto Prices Falling: Why Uptober Is Not Going As Expected",
-                    snippet: "Market analysis reveals seasonal patterns breaking down with expert predictions recalibrated for Q4 performance.",
-                    source: "Crypto News",
-                    url: "https://crypto.news/crypto-prices-falling-why-uptober-is-not-going-as-expected/"
-                },
-                {
-                    title: "The U.S. Government Now Holds 327,000 Bitcoin",
-                    snippet: "Government's accumulated Bitcoin holdings exceed institutional investor portfolios, creating significant market dynamics.",
-                    source: "Crypto News",
-                    url: "https://crypto.news/the-u-s-government-now-holds-327000-bitcoin/"
+        // API Configuration
+        const CRYPTO_NEWS_API_URL = 'https://rex64qt8w9.execute-api.us-east-1.amazonaws.com/prod/news';
+        let currentSentimentFilter = 'all';
+        let cachedNewsData = null;
+
+        async function fetchNewsData() {
+            try {
+                const response = await fetch(`${CRYPTO_NEWS_API_URL}?sentiment=all`);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
-            ];
+
+                cachedNewsData = await response.json();
+                return cachedNewsData;
+            } catch (error) {
+                console.error('Error fetching news:', error);
+                throw error;
+            }
+        }
+
+        async function fetchNews() {
+            try {
+                newsListEl.innerHTML = '';
+                newsLoadingEl.style.display = 'block';
+
+                const data = await fetchNewsData();
+
+                if (!data.articles || data.articles.length === 0) {
+                    newsListEl.innerHTML = '<p style="text-align: center; color: #CCCCCC;">No news available at this time.</p>';
+                } else {
+                    data.articles.forEach(article => {
+                        newsListEl.innerHTML += createNewsItem(article);
+                    });
+                }
+
+                newsLoadingEl.style.display = 'none';
+            } catch (error) {
+                console.error('Error fetching news:', error);
+                newsListEl.innerHTML = '<p style="text-align: center; color: #FF0055;">Failed to fetch news. Please try again later.</p>';
+                newsLoadingEl.style.display = 'none';
+            }
+        }
+
+        function filterNewsBySentiment(sentiment) {
+            currentSentimentFilter = sentiment;
+
+            // Update button states
+            document.querySelectorAll('.sentiment-btn').forEach(btn => {
+                if (btn.dataset.sentiment === sentiment) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            // Filter articles
+            if (!cachedNewsData || !cachedNewsData.articles) {
+                return;
+            }
 
             newsListEl.innerHTML = '';
-            newsData.forEach(item => {
-                newsListEl.innerHTML += createNewsItem(item.title, item.snippet, item.source, item.url);
-            });
-            newsLoadingEl.style.display = 'none';
+            let filteredArticles = cachedNewsData.articles;
+
+            if (sentiment !== 'all') {
+                filteredArticles = cachedNewsData.articles.filter(article =>
+                    article.sentiment.toLowerCase() === sentiment.toLowerCase()
+                );
+            }
+
+            if (filteredArticles.length === 0) {
+                newsListEl.innerHTML = `<p style="text-align: center; color: #CCCCCC;">No ${sentiment} articles available.</p>`;
+            } else {
+                filteredArticles.forEach(article => {
+                    newsListEl.innerHTML += createNewsItem(article);
+                });
+            }
         }
 
         window.handleImageError = handleImageError;
+        window.filterNewsBySentiment = filterNewsBySentiment;
 
         // --- Cursor Glow Effect ---
         const cursorGlow = document.getElementById('cursor-glow');
