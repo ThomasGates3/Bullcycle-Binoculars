@@ -64,7 +64,6 @@ resource "aws_lambda_function" "crypto_news" {
     variables = {
       NEWSDATA_API_KEY  = var.newsdata_api_key
       DDB_TABLE         = aws_dynamodb_table.crypto_news_cache.name
-      AWS_REGION        = var.aws_region
       BEDROCK_MODEL_ID  = var.bedrock_model_id
       CACHE_TTL         = var.cache_ttl
       MAX_RETRIES       = var.max_retries
