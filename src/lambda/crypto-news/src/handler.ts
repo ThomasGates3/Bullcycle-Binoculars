@@ -1,9 +1,9 @@
-import { APIGatewayProxyHandler, APIGatewayProxyResult } from 'aws-lambda';
+import { APIGatewayProxyEvent, APIGatewayProxyHandler, APIGatewayProxyResult } from 'aws-lambda';
 import { loadConfig } from './utils/config';
 import { logger } from './utils/logger';
 import { fetchCryptoNews, normalizeArticle } from './services/newsdata';
 import { analyzeSentiment } from './services/sentiment';
-import { getCachedArticles, cacheArticles, generateQueryKey } from './services/cache';
+import { getCachedArticles, cacheArticles, generateQueryKey, CacheEntry } from './services/cache';
 import { deduplicateArticles } from './services/deduplicator';
 
 const QUERY = 'cryptocurrency AND (Regulation OR Investigation OR Investment OR Institutional OR Hack OR Exploit OR Vulnerability OR AI OR Partnership OR Crash OR Surge OR "All-Time High" OR Record OR Dip)';
@@ -29,7 +29,7 @@ interface ApiResponse {
   articles: EnrichedArticle[];
 }
 
-export const handler: APIGatewayProxyHandler = async (event): Promise<APIGatewayProxyResult> => {
+export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
   try {
     const config = loadConfig();
     logger.setContext({ requestId: event.requestContext?.requestId || 'unknown' });
@@ -45,7 +45,7 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
 
     // Check cache
     const queryKey = generateQueryKey(QUERY, LANGUAGE, CATEGORY);
-    let cachedEntry = await getCachedArticles(config.ddbTable, queryKey, config.awsRegion);
+    let cachedEntry: CacheEntry | null = await getCachedArticles(config.ddbTable, queryKey, config.awsRegion);
 
     if (!cachedEntry) {
       // Fetch fresh articles
@@ -72,7 +72,7 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
         title: a.title,
         url: a.url,
         source_name: a.source_name || 'Unknown',
-        pubDate: a.pubDate,
+        pubDate: a.pubDate || new Date().toISOString(),
         tickers: a.tickers || [],
         snippet: a.description || '',
         sentiment: a.sentiment,
@@ -88,6 +88,10 @@ export const handler: APIGatewayProxyHandler = async (event): Promise<APIGateway
         cachedAt: Math.floor(Date.now() / 1000),
         ttl: Math.floor(Date.now() / 1000) + config.cacheTtl,
       };
+    }
+
+    if (!cachedEntry) {
+      return errorResponse(503, 'Failed to retrieve articles');
     }
 
     // Filter by sentiment

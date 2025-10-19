@@ -15,10 +15,12 @@
     "@aws-sdk/client-bedrock-runtime": "^3.450.0",
     "@aws-sdk/client-dynamodb": "^3.450.0",
     "@aws-sdk/client-sagemaker-runtime": "^3.450.0",
+    "@aws-sdk/lib-dynamodb": "^3.913.0",
     "@aws-sdk/util-dynamodb": "^3.450.0",
     "axios": "^1.6.2"
   },
   "devDependencies": {
+    "@types/aws-lambda": "^8.10.156",
     "@types/jest": "^29.5.8",
     "@types/node": "^20.10.0",
     "@typescript-eslint/eslint-plugin": "^6.13.2",
