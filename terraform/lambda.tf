@@ -70,7 +70,7 @@ resource "aws_lambda_function" "crypto_news" {
     }
   }
 
-  source_code_hash = fileexists("${path.module}/lambda_package/lambda_crypto_news.zip") ? filebase64sha256("${path.module}/lambda_package/lambda_crypto_news.zip") : null
+  source_code_hash = filebase64sha256("${path.module}/lambda_package/lambda_crypto_news.zip")
 }
 
 resource "aws_api_gateway_rest_api" "crypto_news_api" {

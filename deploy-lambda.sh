@@ -46,8 +46,20 @@ zip -r lambda_crypto_news.zip . -x "node_modules/*/test/*" "node_modules/*/.git/
 echo -e "${GREEN}✅ Lambda build and package complete${NC}"
 cd ../../../
 
-# Step 2: Check Terraform configuration
-echo -e "${YELLOW}🔧 Step 2: Validating Terraform...${NC}"
+# Step 2: Ensure lambda_package directory exists
+echo -e "${YELLOW}🔧 Step 2: Creating lambda deployment package...${NC}"
+mkdir -p terraform/lambda_package
+
+# Verify the ZIP file was created
+if [ ! -f "terraform/lambda_package/lambda_crypto_news.zip" ]; then
+  echo -e "${RED}❌ Deployment package creation failed${NC}"
+  exit 1
+fi
+
+echo -e "${GREEN}✅ Deployment package ready${NC}"
+
+# Step 3: Check Terraform configuration
+echo -e "${YELLOW}🔧 Step 3: Validating Terraform...${NC}"
 cd terraform
 
 if [ ! -f "terraform.tfvars" ]; then
