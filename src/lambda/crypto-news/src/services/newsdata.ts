@@ -18,7 +18,7 @@ export interface NewsDataResponse {
   nextPage?: string;
 }
 
-const QUERY = 'cryptocurrency AND (Regulation OR Investigation OR Investment OR Institutional OR Hack OR Exploit OR Vulnerability OR AI OR Partnership OR Crash OR Surge OR "All-Time High" OR Record OR Dip)';
+const QUERY = 'cryptocurrency';
 
 export async function fetchCryptoNews(apiKey: string, maxRetries: number, initialBackoffMs: number): Promise<NewsArticle[]> {
   const url = 'https://newsdata.io/api/1/news';
