@@ -52,7 +52,7 @@ resource "aws_iam_role_policy" "lambda_policy" {
 }
 
 resource "aws_lambda_function" "crypto_news" {
-  filename            = "lambda_placeholder.zip"
+  filename            = data.archive_file.lambda_zip.output_path
   function_name       = var.lambda_function_name
   role                = aws_iam_role.lambda_role.arn
   handler             = "dist/handler.handler"
@@ -72,6 +72,7 @@ resource "aws_lambda_function" "crypto_news" {
   }
 
   source_code_hash = data.archive_file.lambda_zip.output_base64sha256
+  depends_on       = [data.archive_file.lambda_zip]
 }
 
 data "archive_file" "lambda_zip" {
