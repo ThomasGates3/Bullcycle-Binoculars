@@ -1,0 +1,97 @@
+═══════════════════════════════════════════════════════════════════════════════
+                        BULLCYCLE BINOCULARS - QUICK START
+═══════════════════════════════════════════════════════════════════════════════
+
+🚀 DEPLOY IN 5 STEPS (Takes ~30 minutes):
+
+1️⃣  CREATE AWS ACCOUNT
+    Go to: https://aws.amazon.com
+    Time: 5 minutes
+
+2️⃣  CREATE IAM USER
+    AWS Console → IAM → Users → Create User
+    Name: bullcycle-github-deploy
+    Attach: AmazonS3FullAccess, CloudFrontFullAccess
+    Create access key → Copy both keys
+    Time: 3 minutes
+
+3️⃣  ADD GITHUB SECRETS
+    GitHub → Repo Settings → Secrets → New Secret
+    Add: AWS_ACCESS_KEY_ID = (from step 2)
+    Add: AWS_SECRET_ACCESS_KEY = (from step 2)
+    Time: 2 minutes
+
+4️⃣  RUN TERRAFORM
+    cd /Users/tg3/dev/bullcycle-binoculars/terraform
+    terraform init
+    terraform plan
+    terraform apply (type 'yes')
+    Time: 5 minutes
+    ⏳ Wait 5-10 minutes for CloudFront to deploy!
+
+5️⃣  TEST IT WORKS
+    git add .
+    git commit -m "Test deployment"
+    git push origin main
+    → Watch GitHub Actions → See live URL
+    Time: 5 minutes
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📚 FOR DETAILED INSTRUCTIONS:
+    → Read: /Users/tg3/dev/bullcycle-binoculars/GETTING_STARTED.md
+    → Full guide: /Users/tg3/dev/bullcycle-binoculars/DEPLOYMENT.md
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📁 KEY FILES IN YOUR PROJECT:
+
+/terraform/                          Infrastructure code
+  ├── main.tf                       AWS provider setup
+  ├── s3.tf                         S3 bucket config
+  ├── cloudfront.tf                 CloudFront CDN config
+  ├── variables.tf                  Configuration variables
+  ├── outputs.tf                    Output URLs
+  └── terraform.tfvars              Configuration values
+
+/.github/workflows/
+  └── deploy.yml                    Automatic deployment on push
+
+/src/index.html                      Your crypto tracker app
+
+═══════════════════════════════════════════════════════════════════════════════
+
+✨ WHAT YOU GET:
+
+✅ S3 Bucket - Holds your HTML/CSS/JS files
+✅ CloudFront CDN - Serves files globally with HTTPS
+✅ GitHub Actions - Auto-deploys when you push code
+✅ Zero Setup After Deploy - Just push and it updates automatically
+
+═══════════════════════════════════════════════════════════════════════════════
+
+💰 COSTS:
+
+Within AWS Free Tier = $0/month for typical usage
+
+═══════════════════════════════════════════════════════════════════════════════
+
+❓ NEED HELP?
+
+Terraform error?
+  → Check terraform/outputs.tf for variable names
+  → Ensure AWS credentials are configured
+
+Deployment not working?
+  → Check GitHub Actions tab → See error logs
+  → Verify AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are in GitHub Secrets
+
+CloudFront shows "Access Denied"?
+  → It's normal during first deployment
+  → Wait 5-10 minutes for CloudFront to fully deploy
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🎯 NEXT STEP: Open GETTING_STARTED.md and follow the checklist!
+
+═══════════════════════════════════════════════════════════════════════════════
