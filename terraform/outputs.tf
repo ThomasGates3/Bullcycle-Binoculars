@@ -37,3 +37,23 @@ output "deployment_info" {
     region = aws_s3_bucket.website.region
   }
 }
+
+output "lambda_function_name" {
+  description = "Crypto news Lambda function name"
+  value       = aws_lambda_function.crypto_news.function_name
+}
+
+output "api_gateway_url" {
+  description = "API Gateway endpoint URL"
+  value       = "${aws_api_gateway_deployment.api_deployment.invoke_url}/news"
+}
+
+output "dynamodb_table_name" {
+  description = "DynamoDB table name for news cache"
+  value       = aws_dynamodb_table.crypto_news_cache.name
+}
+
+output "lambda_role_arn" {
+  description = "Lambda execution role ARN"
+  value       = aws_iam_role.lambda_role.arn
+}
