@@ -38,7 +38,7 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
   }
 
   # Cache behavior for HTML files
-  cache_behavior {
+  ordered_cache_behavior {
     path_pattern     = "*.html"
     allowed_methods  = ["GET", "HEAD", "OPTIONS"]
     cached_methods   = ["GET", "HEAD"]
