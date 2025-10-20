@@ -19,7 +19,7 @@ Save this URL as an environment variable or constant in your HTML/JavaScript.
 ### 2. Basic API Call
 
 ```javascript
-const API_URL = "https://your-api-gateway-url/news";
+const API_URL = ""https://hwbi4b61ak.execute-api.us-east-1.amazonaws.com/prod/news"";
 
 async function fetchCryptoNews(sentiment = "all") {
   try {

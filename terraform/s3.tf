@@ -1,6 +1,7 @@
 # S3 Bucket for static website hosting
 resource "aws_s3_bucket" "website" {
-  bucket = "${var.bucket_name}-${data.aws_caller_identity.current.account_id}"
+  bucket       = "${var.bucket_name}-${data.aws_caller_identity.current.account_id}"
+  force_destroy = true
 }
 
 # Enable versioning for safety
