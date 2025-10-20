@@ -840,16 +840,21 @@
 
         async function fetchNewsData() {
             try {
+                console.log('🚀 Fetching news from:', CRYPTO_NEWS_API_URL);
                 const response = await fetch(`${CRYPTO_NEWS_API_URL}?sentiment=all`);
+
+                console.log('📡 Response status:', response.status);
 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
                 cachedNewsData = await response.json();
+                console.log('✅ News fetched successfully:', cachedNewsData.articles.length, 'articles');
                 return cachedNewsData;
             } catch (error) {
-                console.error('Error fetching news:', error);
+                console.error('❌ Error fetching news:', error.message, error);
+                console.error('Stack:', error.stack);
                 throw error;
             }
         }
