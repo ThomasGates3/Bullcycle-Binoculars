@@ -774,6 +774,7 @@
 
         function createNewsItem(article) {
             const truncatedSnippet = article.snippet.length > 120 ? article.snippet.substring(0, 120) + '...' : article.snippet;
+            const source = (article.source_name || article.source || 'Unknown').toUpperCase();
             return `
                 <a class="news-item" href="${article.url}" target="_blank" rel="noopener">
                     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
@@ -781,7 +782,7 @@
                         <h3 style="margin: 0; flex: 1;">${article.title}</h3>
                     </div>
                     <p>${truncatedSnippet}</p>
-                    <div class="source">► ${article.source.toUpperCase()}</div>
+                    <div class="source">► ${source}</div>
                 </a>
             `;
         }
